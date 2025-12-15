@@ -1,0 +1,8 @@
+dist/
+node_modules/
+logs/
+*.js
+*.d.ts
+database/init.sql
+coverage/
+.nyc_output/ 
