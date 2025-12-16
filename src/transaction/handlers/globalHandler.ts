@@ -12,7 +12,6 @@ import { Handler } from './interfaces/handler';
 import { L1NonceWallet, L2NonceWallet, NonceWalletManager } from '../nonceWallet';
 import { ETHEREUM_BRIDGE_ABI } from '../../contracts/EthereumBridge';
 import { VIA_BRIDGE_ABI } from '../../contracts/ViaBridge';
-import { VAULT_CONTROLLER_ABI } from '../../contracts/VaultControler';
 
 export abstract class GlobalHandler implements Handler {
   private readonly nonceWalletManager: NonceWalletManager = NonceWalletManager.getInstance();
@@ -171,16 +170,5 @@ export abstract class GlobalHandler implements Handler {
     }
 
     return false;
-  }
-
-  /**
-   * Get VaultController contract on L1
-   */
-  protected getVaultControllerContract(): ethers.Contract {
-    return new ethers.Contract(
-      appConfig.vaultControllerAddress,
-      VAULT_CONTROLLER_ABI,
-      this.getL1Wallet()
-    );
   }
 }
