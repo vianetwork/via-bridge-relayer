@@ -1,7 +1,8 @@
 import { MessageWithdrawalExecuted } from '../entities/messageWithdrawalExecuted.entity';
 import { GraphBaseRepository } from './base.repository';
+import { IMessageWithdrawalExecutedRepository } from './interfaces';
 
-export class MessageWithdrawalExecutedRepository extends GraphBaseRepository<MessageWithdrawalExecuted> {
+export class MessageWithdrawalExecutedRepository extends GraphBaseRepository<MessageWithdrawalExecuted> implements IMessageWithdrawalExecutedRepository {
     constructor() {
         super(MessageWithdrawalExecuted);
     }

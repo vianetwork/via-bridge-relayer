@@ -1,10 +1,9 @@
 /* eslint-disable no-unused-vars */
 import { TransactionRepository } from '../../database/transaction.repository';
 import { DepositExecutedRepository } from '../../database/depositExecuted.repository';
-import { MessageWithdrawalExecutedRepository } from '../../database/messageWithdrawalExecuted.repository';
-import { L1MessageSentRepository } from '../../database/l1MessageSent.repository';
 import { L2MessageSentRepository } from '../../database/l2MessageSent.repository';
 import { VaultControllerTransactionRepository } from '../../database/vaultControllerTransaction.repository';
+import { IL1MessageSentRepository, IMessageWithdrawalExecutedRepository } from '../../database/interfaces';
 import { ContractAddresses, BridgeOrigin } from '../../types/types';
 import { ethers, AbiCoder } from 'ethers';
 import * as viaEthers from 'via-ethers';
@@ -32,8 +31,8 @@ export abstract class GlobalHandler implements Handler {
   constructor(
     protected readonly transactionRepository: TransactionRepository,
     protected readonly depositExecutedRepository: DepositExecutedRepository,
-    protected readonly messageWithdrawalExecutedRepository: MessageWithdrawalExecutedRepository,
-    protected readonly l1MessageSentRepository: L1MessageSentRepository,
+    protected readonly messageWithdrawalExecutedRepository: IMessageWithdrawalExecutedRepository,
+    protected readonly l1MessageSentRepository: IL1MessageSentRepository,
     protected readonly l2MessageSentRepository: L2MessageSentRepository,
     protected readonly vaultControllerTransactionRepository: VaultControllerTransactionRepository,
     protected readonly contractAddresses: ContractAddresses,

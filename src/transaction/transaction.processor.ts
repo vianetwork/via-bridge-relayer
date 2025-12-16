@@ -1,9 +1,8 @@
 import { TransactionRepository } from '../database/transaction.repository';
 import { DepositExecutedRepository } from '../database/depositExecuted.repository';
-import { MessageWithdrawalExecutedRepository } from '../database/messageWithdrawalExecuted.repository';
-import { L1MessageSentRepository } from '../database/l1MessageSent.repository';
 import { L2MessageSentRepository } from '../database/l2MessageSent.repository';
 import { VaultControllerTransactionRepository } from '../database/vaultControllerTransaction.repository';
+import { IL1MessageSentRepository, IMessageWithdrawalExecutedRepository } from '../database/interfaces';
 import {
   ContractAddresses, BridgeOrigin,
 } from '../types/types';
@@ -25,8 +24,8 @@ export type TransactionProcessorArgs = {
   status: TransactionProcessorStatus,
   transactionRepository: TransactionRepository,
   depositExecutedRepository: DepositExecutedRepository,
-  messageWithdrawalExecutedRepository: MessageWithdrawalExecutedRepository,
-  l1MessageSentRepository: L1MessageSentRepository,
+  messageWithdrawalExecutedRepository: IMessageWithdrawalExecutedRepository,
+  l1MessageSentRepository: IL1MessageSentRepository,
   l2MessageSentRepository: L2MessageSentRepository,
   vaultControllerTransactionRepository: VaultControllerTransactionRepository,
   contractAddresses: ContractAddresses,
@@ -38,8 +37,8 @@ export type TransactionProcessorArgs = {
 export class TransactionProcessor {
   protected readonly transactionRepository: TransactionRepository;
   protected readonly depositExecutedRepository: DepositExecutedRepository;
-  protected readonly messageWithdrawalExecutedRepository: MessageWithdrawalExecutedRepository;
-  protected readonly l1MessageSentRepository: L1MessageSentRepository;
+  protected readonly messageWithdrawalExecutedRepository: IMessageWithdrawalExecutedRepository;
+  protected readonly l1MessageSentRepository: IL1MessageSentRepository;
   protected readonly l2MessageSentRepository: L2MessageSentRepository;
   protected readonly vaultControllerTransactionRepository: VaultControllerTransactionRepository;
   protected readonly contractAddresses: ContractAddresses;

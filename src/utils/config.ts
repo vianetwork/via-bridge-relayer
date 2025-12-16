@@ -66,6 +66,14 @@ export class AppConfig {
   public readonly l1GraphSchema: string;
   public readonly l2GraphSchema: string;
 
+  // The Graph API Configuration
+  public readonly useTheGraphForL1: boolean;
+  public readonly theGraphApiKey?: string;
+  public readonly theGraphL1Endpoint?: string;
+  public readonly theGraphRetryAttempts: number;
+  public readonly theGraphRetryDelay: number;
+  public readonly theGraphRequestTimeout: number;
+
   // Application Configuration
   public readonly nodeEnv: string;
   public readonly logLevel: string;
@@ -139,6 +147,14 @@ export class AppConfig {
       // Graph Database Schemas
       this.l1GraphSchema = this.getString('L1_GRAPH_SCHEMA', 'sgd3');
       this.l2GraphSchema = this.getString('L2_GRAPH_SCHEMA', 'sgd2');
+
+      // The Graph API Configuration
+      this.useTheGraphForL1 = this.getBoolean('USE_THEGRAPH_FOR_L1', false);
+      this.theGraphApiKey = this.getEnvVar('THEGRAPH_API_KEY');
+      this.theGraphL1Endpoint = this.getEnvVar('THEGRAPH_L1_ENDPOINT');
+      this.theGraphRetryAttempts = this.getNumber('THEGRAPH_RETRY_ATTEMPTS', 3);
+      this.theGraphRetryDelay = this.getNumber('THEGRAPH_RETRY_DELAY', 1000);
+      this.theGraphRequestTimeout = this.getNumber('THEGRAPH_REQUEST_TIMEOUT', 30000);
 
       // Application Configuration
       this.nodeEnv = this.getString('NODE_ENV', 'development');
@@ -357,6 +373,23 @@ export class AppConfig {
     if (!validLogLevels.includes(this.logLevel)) {
       throw new Error(`LOG_LEVEL must be one of: ${validLogLevels.join(', ')}`);
     }
+
+    // Validate The Graph configuration
+    if (this.useTheGraphForL1) {
+      if (!this.theGraphL1Endpoint) {
+        throw new Error('THEGRAPH_L1_ENDPOINT is required when USE_THEGRAPH_FOR_L1 is enabled');
+      }
+      this.validateUrl(this.theGraphL1Endpoint, 'THEGRAPH_L1_ENDPOINT');
+      if (this.theGraphRetryAttempts < 1 || this.theGraphRetryAttempts > 10) {
+        throw new Error('THEGRAPH_RETRY_ATTEMPTS must be between 1 and 10');
+      }
+      if (this.theGraphRetryDelay < 100 || this.theGraphRetryDelay > 30000) {
+        throw new Error('THEGRAPH_RETRY_DELAY must be between 100 and 30000ms');
+      }
+      if (this.theGraphRequestTimeout < 1000 || this.theGraphRequestTimeout > 120000) {
+        throw new Error('THEGRAPH_REQUEST_TIMEOUT must be between 1000 and 120000ms');
+      }
+    }
   }
 
   /**
@@ -434,6 +467,12 @@ export class AppConfig {
       isGraphDatabaseSeparate: this.isGraphDatabaseSeparate(),
       l1GraphSchema: this.l1GraphSchema,
       l2GraphSchema: this.l2GraphSchema,
+      useTheGraphForL1: this.useTheGraphForL1,
+      theGraphApiKey: this.theGraphApiKey ? '***REDACTED***' : undefined,
+      theGraphL1Endpoint: this.theGraphL1Endpoint,
+      theGraphRetryAttempts: this.theGraphRetryAttempts,
+      theGraphRetryDelay: this.theGraphRetryDelay,
+      theGraphRequestTimeout: this.theGraphRequestTimeout,
       nodeEnv: this.nodeEnv,
       logLevel: this.logLevel,
       enableFileLogging: this.enableFileLogging,
