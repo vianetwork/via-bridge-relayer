@@ -17,7 +17,6 @@ export class AppConfig {
   // Contract Addresses (Required)
   public readonly ethereumBridgeAddress: string;
   public readonly viaBridgeAddress: string;
-  public readonly vaultControllerAddress: string;
 
   // Relayer Configuration (Required)
   public readonly relayerPrivateKey: string;
@@ -90,7 +89,6 @@ export class AppConfig {
       // Contract Addresses (Required)
       this.ethereumBridgeAddress = this.getRequiredString('ETHEREUM_BRIDGE_ADDRESS');
       this.viaBridgeAddress = this.getRequiredString('VIA_BRIDGE_ADDRESS');
-      this.vaultControllerAddress = this.getRequiredString('VAULT_CONTROLLER_ADDRESS');
 
       // Relayer Configuration (Required)
       this.relayerPrivateKey = this.getRequiredString('RELAYER_PRIVATE_KEY');
@@ -314,7 +312,6 @@ export class AppConfig {
     // Validate Ethereum addresses
     this.validateEthereumAddress(this.ethereumBridgeAddress, 'ETHEREUM_BRIDGE_ADDRESS');
     this.validateEthereumAddress(this.viaBridgeAddress, 'VIA_BRIDGE_ADDRESS');
-    this.validateEthereumAddress(this.vaultControllerAddress, 'VAULT_CONTROLLER_ADDRESS');
 
     // Validate URLs
     this.validateUrl(this.ethUrl, 'ETH_URL');
@@ -401,7 +398,6 @@ export class AppConfig {
       viaUrl: this.viaUrl,
       ethereumBridgeAddress: this.ethereumBridgeAddress,
       viaBridgeAddress: this.viaBridgeAddress,
-      vaultControllerAddress: this.vaultControllerAddress,
       relayerPrivateKey: '***REDACTED***',
       workerPollingInterval: this.workerPollingInterval,
       ethWaitBlockConfirmations: this.ethWaitBlockConfirmations,
