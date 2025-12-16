@@ -1,7 +1,8 @@
 import { DepositExecuted } from '../entities/depositExecuted.entity';
 import { GraphBaseRepository } from './base.repository';
+import { IDepositExecutedRepository } from './interfaces';
 
-export class DepositExecutedRepository extends GraphBaseRepository<DepositExecuted> {
+export class DepositExecutedRepository extends GraphBaseRepository<DepositExecuted> implements IDepositExecutedRepository {
     constructor() {
         super(DepositExecuted);
     }

@@ -16,6 +16,8 @@ import { relayerDataSource, graphDataSource } from './database/typeorm.config';
 import { ProviderFactory } from './utils/providerFactory';
 import { FailoverProvider } from './utils/failoverProvider';
 import { appConfig } from './utils/config';
+import { IL1MessageSentRepository, IMessageWithdrawalExecutedRepository } from './database/interfaces';
+import { GraphQLClient, L1MessageSentGraphQLRepository, MessageWithdrawalExecutedGraphQLRepository } from './graphql';
 
 async function main() {
   log.info('🚀 Blockchain Bridge Monitor - Bridge Events (with Failover Providers)');
@@ -27,12 +29,13 @@ async function main() {
   let transactionService: TransactionService | null = null;
   let transactionRepository: TransactionRepository | null = null;
   let depositExecutedRepository: DepositExecutedRepository | null = null;
-  let messageWithdrawalExecutedRepository: MessageWithdrawalExecutedRepository | null = null;
-  let l1MessageSentRepository: L1MessageSentRepository | null = null;
+  let messageWithdrawalExecutedRepository: IMessageWithdrawalExecutedRepository | null = null;
+  let l1MessageSentRepository: IL1MessageSentRepository | null = null;
   let l2MessageSentRepository: L2MessageSentRepository | null = null;
   let vaultControllerTransactionRepository: VaultControllerTransactionRepository | null = null;
   let ethProvider: ethers.Provider | null = null;
   let viaProvider: viaEthers.Provider | null = null;
+  let graphqlClient: GraphQLClient | null = null;
 
   try {
     // Create failover providers with automatic fallback capabilities
@@ -84,7 +87,32 @@ async function main() {
     }
     log.info('✅ Relayer database connected');
 
-    // Initialize graph DataSource
+    // Initialize graph DataSource for L2 (and L1 if not using The Graph API)
+    if (appConfig.useTheGraphForL1) {
+      log.info('📊 Using The Graph API for L1 data');
+      log.info(`   Endpoint: ${appConfig.theGraphL1Endpoint}`);
+
+      // Create GraphQL client for L1 data
+      graphqlClient = new GraphQLClient({
+        endpoint: appConfig.theGraphL1Endpoint!,
+        apiKey: appConfig.theGraphApiKey,
+        retryAttempts: appConfig.theGraphRetryAttempts,
+        retryDelay: appConfig.theGraphRetryDelay,
+        requestTimeout: appConfig.theGraphRequestTimeout,
+      });
+
+      // Create GraphQL-based repositories for L1
+      l1MessageSentRepository = new L1MessageSentGraphQLRepository(graphqlClient);
+      messageWithdrawalExecutedRepository = new MessageWithdrawalExecutedGraphQLRepository(graphqlClient);
+
+      // Connect GraphQL repositories (lightweight, just marks as connected)
+      await l1MessageSentRepository.connect();
+      await messageWithdrawalExecutedRepository.connect();
+      log.info('✅ GraphQL repositories for L1 initialized');
+    }
+
+    // Initialize graph DataSource for L2 data (always needed)
+    // Also initialize for L1 if not using The Graph API
     log.info('🔄 Connecting to graph database...');
     if (appConfig.isGraphDatabaseSeparate()) {
       log.info('📊 Graph database is configured separately');
@@ -99,18 +127,26 @@ async function main() {
     // Initialize database repositories
     transactionRepository = new TransactionRepository();
     depositExecutedRepository = new DepositExecutedRepository();
-    messageWithdrawalExecutedRepository = new MessageWithdrawalExecutedRepository();
-    l1MessageSentRepository = new L1MessageSentRepository();
     l2MessageSentRepository = new L2MessageSentRepository();
     vaultControllerTransactionRepository = new VaultControllerTransactionRepository();
+
+    // If not using The Graph for L1, create TypeORM repositories
+    if (!appConfig.useTheGraphForL1) {
+      l1MessageSentRepository = new L1MessageSentRepository();
+      messageWithdrawalExecutedRepository = new MessageWithdrawalExecutedRepository();
+    }
 
     // Connect all repositories (they will use their respective pre-initialized DataSources)
     await transactionRepository.connect();
     await depositExecutedRepository.connect();
-    await messageWithdrawalExecutedRepository.connect();
-    await l1MessageSentRepository.connect();
     await l2MessageSentRepository.connect();
     await vaultControllerTransactionRepository.connect();
+
+    // Connect TypeORM L1 repositories if not using The Graph
+    if (!appConfig.useTheGraphForL1) {
+      await (l1MessageSentRepository as L1MessageSentRepository).connect();
+      await (messageWithdrawalExecutedRepository as MessageWithdrawalExecutedRepository).connect();
+    }
     log.info('✅ All repository connections established');
 
     if (appConfig.ethereumBridgeAddress || appConfig.viaBridgeAddress) {
@@ -119,6 +155,12 @@ async function main() {
         ethereumBridge: appConfig.ethereumBridgeAddress,
         viaBridge: appConfig.viaBridgeAddress,
       };
+
+      // Verify all repositories are initialized
+      if (!transactionRepository || !depositExecutedRepository || !messageWithdrawalExecutedRepository ||
+          !l1MessageSentRepository || !l2MessageSentRepository || !vaultControllerTransactionRepository) {
+        throw new Error('Failed to initialize all required repositories');
+      }
 
       transactionService = new TransactionService(
         ethProvider,

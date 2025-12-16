@@ -1,7 +1,8 @@
 import { L1MessageSent } from '../entities/l1MessageSent.entity';
 import { GraphBaseRepository } from './base.repository';
+import { IL1MessageSentRepository } from './interfaces';
 
-export class L1MessageSentRepository extends GraphBaseRepository<L1MessageSent> {
+export class L1MessageSentRepository extends GraphBaseRepository<L1MessageSent> implements IL1MessageSentRepository {
     constructor() {
         super(L1MessageSent);
     }

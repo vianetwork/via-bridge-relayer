@@ -7,10 +7,9 @@ import {
 } from './transaction.processor';
 import { TransactionRepository } from '../database/transaction.repository';
 import { DepositExecutedRepository } from '../database/depositExecuted.repository';
-import { MessageWithdrawalExecutedRepository } from '../database/messageWithdrawalExecuted.repository';
-import { L1MessageSentRepository } from '../database/l1MessageSent.repository';
 import { L2MessageSentRepository } from '../database/l2MessageSent.repository';
 import { VaultControllerTransactionRepository } from '../database/vaultControllerTransaction.repository';
+import { IL1MessageSentRepository, IMessageWithdrawalExecutedRepository } from '../database/interfaces';
 import { ContractAddresses, BridgeOrigin } from '../types/types';
 
 export class TransactionService {
@@ -23,8 +22,8 @@ export class TransactionService {
     private readonly contractAddresses: ContractAddresses,
     private readonly transactionRepository: TransactionRepository,
     private readonly depositExecutedRepository: DepositExecutedRepository,
-    private readonly messageWithdrawalExecutedRepository: MessageWithdrawalExecutedRepository,
-    private readonly l1MessageSentRepository: L1MessageSentRepository,
+    private readonly messageWithdrawalExecutedRepository: IMessageWithdrawalExecutedRepository,
+    private readonly l1MessageSentRepository: IL1MessageSentRepository,
     private readonly l2MessageSentRepository: L2MessageSentRepository,
     private readonly vaultControllerTransactionRepository: VaultControllerTransactionRepository,
     private readonly pollingInterval: number
