@@ -4,10 +4,11 @@ import { BridgeFinalizeHandler } from './finalize/bridgeFinalizeHandler';
 import { L1BatchNumberHandler } from './finalize/l1BatchNumberHandler';
 import { VaultControllerUpdateHandler } from './finalize/vaultControllerUpdateHandler';
 import { WithdrawalStateUpdatedHandler } from './finalize/withdrawalStateUpdatedHandler';
+import { StalePendingTransactionHandler } from './stale/stalePendingTransactionHandler';
 
 
 export class HandlerFactory {
-  static createHandler(args: TransactionProcessorArgs): BridgeInitiatedHandler | BridgeFinalizeHandler | L1BatchNumberHandler | VaultControllerUpdateHandler | WithdrawalStateUpdatedHandler {
+  static createHandler(args: TransactionProcessorArgs): BridgeInitiatedHandler | BridgeFinalizeHandler | L1BatchNumberHandler | VaultControllerUpdateHandler | WithdrawalStateUpdatedHandler | StalePendingTransactionHandler {
     switch (args.status) {
       case TransactionProcessorStatus.New:
         return new BridgeInitiatedHandler(
@@ -63,6 +64,19 @@ export class HandlerFactory {
         );
       case TransactionProcessorStatus.CheckWithdrawalStateUpdated:
         return new WithdrawalStateUpdatedHandler(
+          args.transactionRepository,
+          args.depositExecutedRepository,
+          args.messageWithdrawalExecutedRepository,
+          args.l1MessageSentRepository,
+          args.l2MessageSentRepository,
+          args.vaultControllerTransactionRepository,
+          args.contractAddresses,
+          args.origin,
+          args.originProvider,
+          args.destinationProvider
+        );
+      case TransactionProcessorStatus.CheckStalePending:
+        return new StalePendingTransactionHandler(
           args.transactionRepository,
           args.depositExecutedRepository,
           args.messageWithdrawalExecutedRepository,

@@ -255,7 +255,7 @@ export class TransactionRepository extends RelayerBaseRepository<Transaction> {
     vaultControllerTransactionId: number
   ): Promise<void> {
     if (transactionIds.length === 0) return;
-    
+
     const repository = this.getRepository();
     await repository
       .createQueryBuilder()
@@ -263,5 +263,27 @@ export class TransactionRepository extends RelayerBaseRepository<Transaction> {
       .set({ vaultControllerTransaction: { id: vaultControllerTransactionId } } as any)
       .whereInIds(transactionIds)
       .execute();
+  }
+
+  async getStalePendingTransactions(
+    origin: BridgeOrigin,
+    timeoutMinutes: number,
+    limit?: number
+  ): Promise<Transaction[]> {
+    const repository = this.getRepository();
+    const cutoffTime = new Date(Date.now() - timeoutMinutes * 60 * 1000);
+
+    const queryBuilder = repository
+      .createQueryBuilder('transaction')
+      .where('transaction.status = :status', { status: TransactionStatus.Pending })
+      .andWhere('transaction.origin = :origin', { origin })
+      .andWhere('transaction.createdAt < :cutoffTime', { cutoffTime })
+      .orderBy('transaction.createdAt', 'ASC');
+
+    if (limit) {
+      queryBuilder.limit(limit);
+    }
+
+    return await queryBuilder.getMany();
   }
 }
