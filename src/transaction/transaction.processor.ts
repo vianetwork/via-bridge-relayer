@@ -18,6 +18,7 @@ export enum TransactionProcessorStatus {
   FetchL1BatchNumber = 4,
   UpdateVaultController = 5,
   CheckWithdrawalStateUpdated = 6,
+  CheckStalePending = 7,
 }
 
 export type TransactionProcessorArgs = {

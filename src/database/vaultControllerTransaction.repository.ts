@@ -149,4 +149,24 @@ export class VaultControllerTransactionRepository extends RelayerBaseRepository<
       .where('l1BatchNumber IN (:...l1BatchNumbers)', { l1BatchNumbers })
       .execute();
   }
+
+  async getStalePendingTransactions(
+    timeoutMinutes: number,
+    limit?: number
+  ): Promise<VaultControllerTransaction[]> {
+    const repository = this.getRepository();
+    const cutoffTime = new Date(Date.now() - timeoutMinutes * 60 * 1000);
+
+    const queryBuilder = repository
+      .createQueryBuilder('vct')
+      .where('vct.status = :status', { status: VaultControllerTransactionStatus.Pending })
+      .andWhere('vct.createdAt < :cutoffTime', { cutoffTime })
+      .orderBy('vct.createdAt', 'ASC');
+
+    if (limit) {
+      queryBuilder.limit(limit);
+    }
+
+    return await queryBuilder.getMany();
+  }
 }

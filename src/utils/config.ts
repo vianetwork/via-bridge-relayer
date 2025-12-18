@@ -30,6 +30,7 @@ export class AppConfig {
   public readonly refundInterval: number;
   public readonly ethStartingBlock: number;
   public readonly viaStartingBlock: number;
+  public readonly pendingTxTimeoutMinutes: number;
 
   // L2 Gas Configuration
   public readonly l2GasPrice: bigint;
@@ -111,6 +112,7 @@ export class AppConfig {
       this.refundInterval = this.getNumber('REFUND_INTERVAL', 60000);
       this.ethStartingBlock = this.getNumber('ETH_STARTING_BLOCK', 0);
       this.viaStartingBlock = this.getNumber('VIA_STARTING_BLOCK', 0);
+      this.pendingTxTimeoutMinutes = this.getNumber('PENDING_TX_TIMEOUT_MINUTES', 30);
 
       // L2 Gas Configuration (defaults are reasonable for Via L2)
       this.l2GasPrice = this.getBigInt('L2_GAS_PRICE', 1000n);
@@ -352,6 +354,9 @@ export class AppConfig {
     if (this.refundInterval < 10000) {
       throw new Error('REFUND_INTERVAL must be at least 10000ms (10 seconds)');
     }
+    if (this.pendingTxTimeoutMinutes < 5) {
+      throw new Error('PENDING_TX_TIMEOUT_MINUTES must be at least 5 minutes');
+    }
     if (this.databasePort < 1 || this.databasePort > 65535) {
       throw new Error('DATABASE_PORT must be between 1 and 65535');
     }
@@ -440,6 +445,7 @@ export class AppConfig {
       refundInterval: this.refundInterval,
       ethStartingBlock: this.ethStartingBlock,
       viaStartingBlock: this.viaStartingBlock,
+      pendingTxTimeoutMinutes: this.pendingTxTimeoutMinutes,
       l2GasPrice: this.l2GasPrice.toString(),
       l2GasLimit: this.l2GasLimit.toString(),
       l2GasPerPubdata: this.l2GasPerPubdata.toString(),

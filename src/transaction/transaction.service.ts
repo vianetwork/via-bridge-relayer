@@ -31,6 +31,7 @@ export class TransactionService {
     this.transactionWorkersEth = [
       TransactionProcessorStatus.New,
       TransactionProcessorStatus.Pending,
+      TransactionProcessorStatus.CheckStalePending,
     ].map(
       (status) =>
         new TransactionWorker(
@@ -58,6 +59,7 @@ export class TransactionService {
       TransactionProcessorStatus.FetchL1BatchNumber,
       TransactionProcessorStatus.UpdateVaultController,
       TransactionProcessorStatus.CheckWithdrawalStateUpdated,
+      TransactionProcessorStatus.CheckStalePending,
     ].map(
       (status) =>
         new TransactionWorker(
