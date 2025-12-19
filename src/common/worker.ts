@@ -15,4 +15,8 @@ export abstract class Worker {
     this.currentProcessPromise = null;
     return stopPromise;
   }
+
+  public isRunning(): boolean {
+    return this.currentProcessPromise !== null;
+  }
 }

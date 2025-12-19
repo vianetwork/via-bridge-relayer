@@ -79,6 +79,13 @@ export class AppConfig {
   public readonly logLevel: string;
   public readonly enableFileLogging: boolean;
 
+  // Metrics Configuration
+  public readonly metricsEnabled: boolean;
+  public readonly metricsPort: number;
+  public readonly metricsPath: string;
+  public readonly healthPath: string;
+  public readonly metricsCollectionInterval: number;
+
   // Configuration metadata
   public readonly configSource: string;
 
@@ -160,6 +167,13 @@ export class AppConfig {
       this.nodeEnv = this.getString('NODE_ENV', 'development');
       this.logLevel = this.getString('LOG_LEVEL', 'info');
       this.enableFileLogging = this.getBoolean('ENABLE_FILE_LOGGING', true);
+
+      // Metrics Configuration
+      this.metricsEnabled = this.getBoolean('METRICS_ENABLED', true);
+      this.metricsPort = this.getNumber('METRICS_PORT', 9090);
+      this.metricsPath = this.getString('METRICS_PATH', '/metrics');
+      this.healthPath = this.getString('HEALTH_PATH', '/health');
+      this.metricsCollectionInterval = this.getNumber('METRICS_COLLECTION_INTERVAL', 10000);
 
       // Validate configuration
       this.validateConfiguration();
@@ -376,6 +390,14 @@ export class AppConfig {
       throw new Error(`LOG_LEVEL must be one of: ${validLogLevels.join(', ')}`);
     }
 
+    // Validate metrics configuration
+    if (this.metricsPort < 1 || this.metricsPort > 65535) {
+      throw new Error('METRICS_PORT must be between 1 and 65535');
+    }
+    if (this.metricsCollectionInterval < 1000) {
+      throw new Error('METRICS_COLLECTION_INTERVAL must be at least 1000ms');
+    }
+
     // Validate The Graph configuration
     if (this.useTheGraphForL1) {
       if (!this.theGraphL1Endpoint) {
@@ -478,6 +500,11 @@ export class AppConfig {
       nodeEnv: this.nodeEnv,
       logLevel: this.logLevel,
       enableFileLogging: this.enableFileLogging,
+      metricsEnabled: this.metricsEnabled,
+      metricsPort: this.metricsPort,
+      metricsPath: this.metricsPath,
+      healthPath: this.healthPath,
+      metricsCollectionInterval: this.metricsCollectionInterval,
     };
   }
 }

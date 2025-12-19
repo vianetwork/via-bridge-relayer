@@ -100,4 +100,33 @@ export class TransactionService {
       transactionWorker.stop()
     );
   }
+
+  public getWorkerStatus(): { name: string; running: boolean }[] {
+    const ethStatuses = [
+      TransactionProcessorStatus.New,
+      TransactionProcessorStatus.Pending,
+      TransactionProcessorStatus.CheckStalePending,
+    ];
+
+    const viaStatuses = [
+      TransactionProcessorStatus.New,
+      TransactionProcessorStatus.Pending,
+      TransactionProcessorStatus.FetchL1BatchNumber,
+      TransactionProcessorStatus.UpdateVaultController,
+      TransactionProcessorStatus.CheckWithdrawalStateUpdated,
+      TransactionProcessorStatus.CheckStalePending,
+    ];
+
+    const ethWorkerStatuses = this.transactionWorkersEth.map((worker, index) => ({
+      name: `ETH-${TransactionProcessorStatus[ethStatuses[index]]}`,
+      running: worker.isRunning(),
+    }));
+
+    const viaWorkerStatuses = this.transactionWorkersVia.map((worker, index) => ({
+      name: `VIA-${TransactionProcessorStatus[viaStatuses[index]]}`,
+      running: worker.isRunning(),
+    }));
+
+    return [...ethWorkerStatuses, ...viaWorkerStatuses];
+  }
 }
