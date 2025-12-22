@@ -9,12 +9,15 @@ import { MessageWithdrawalExecuted } from '../../../entities/messageWithdrawalEx
 export class BridgeFinalizeHandler extends GlobalHandler {
 
   async handle(): Promise<boolean> {
-    const lastFinalizedBlock = await this.transactionRepository.getLastFinalizedBlock(this.origin);
+    const lastFinalizedBlockFromDb = await this.transactionRepository.getLastFinalizedBlock(this.origin);
+    const lastFinalizedBlock = Math.max(lastFinalizedBlockFromDb, this.destinationStartingBlock);
     const currentBlock = await this.destinationProvider.getBlockNumber();
     const safeBlock = currentBlock - this.destinationBlockConfirmations;
 
     logger.debug('Polling new bridge finalized events from DB', {
       origin: this.origin,
+      lastFinalizedBlockFromDb,
+      destinationStartingBlock: this.destinationStartingBlock,
       lastFinalizedBlock,
       currentBlock,
       safeBlock
