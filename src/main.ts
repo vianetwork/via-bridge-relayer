@@ -18,6 +18,7 @@ import { FailoverProvider } from './utils/failoverProvider';
 import { appConfig } from './utils/config';
 import { IL1MessageSentRepository, IMessageWithdrawalExecutedRepository } from './database/interfaces';
 import { GraphQLClient, L1MessageSentGraphQLRepository, MessageWithdrawalExecutedGraphQLRepository } from './graphql';
+import { initMetricsService, initHealthService, HttpServer, MetricsService, HealthService } from './metrics';
 
 async function main() {
   log.info('🚀 Blockchain Bridge Monitor - Bridge Events (with Failover Providers)');
@@ -36,6 +37,9 @@ async function main() {
   let ethProvider: ethers.Provider | null = null;
   let viaProvider: viaEthers.Provider | null = null;
   let graphqlClient: GraphQLClient | null = null;
+  let metricsService: MetricsService | null = null;
+  let healthService: HealthService | null = null;
+  let httpServer: HttpServer | null = null;
 
   try {
     // Create failover providers with automatic fallback capabilities
@@ -178,6 +182,35 @@ async function main() {
       await transactionService.startWorkers();
       log.info('✅ Transaction Service started successfully with failover capabilities');
 
+      // Initialize metrics and health services if enabled
+      if (appConfig.metricsEnabled) {
+        log.info('📊 Initializing metrics and health services...');
+
+        // Initialize metrics service
+        metricsService = initMetricsService({
+          transactionRepository,
+          collectionInterval: appConfig.metricsCollectionInterval,
+        });
+        await metricsService.start();
+
+        // Initialize health service
+        healthService = initHealthService();
+        healthService.setProviders(ethProvider, viaProvider);
+        healthService.setTransactionService(transactionService);
+
+        // Start HTTP server for metrics and health endpoints
+        httpServer = new HttpServer({
+          metricsService,
+          healthService,
+          port: appConfig.metricsPort,
+          metricsPath: appConfig.metricsPath,
+          healthPath: appConfig.healthPath,
+        });
+        await httpServer.start();
+
+        log.info('✅ Metrics and health services started');
+      }
+
       // Set up periodic provider health checks
       setInterval(async () => {
         try {
@@ -210,6 +243,20 @@ async function main() {
       log.info(`📴 Received ${signal}. Starting graceful shutdown...`);
 
       try {
+        // Stop HTTP server first
+        if (httpServer) {
+          log.info('🔄 Stopping HTTP server...');
+          await httpServer.stop();
+          log.info('✅ HTTP server stopped');
+        }
+
+        // Stop metrics collection
+        if (metricsService) {
+          log.info('🔄 Stopping metrics service...');
+          metricsService.stop();
+          log.info('✅ Metrics service stopped');
+        }
+
         if (transactionService) {
           log.info('🔄 Stopping Transaction Service...');
           await transactionService.stopWorkers();
