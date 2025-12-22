@@ -9,13 +9,16 @@ import * as viaEthers from 'via-ethers';
 export class BridgeInitiatedHandler extends GlobalHandler {
 
   async handle(): Promise<boolean> {
-    const lastProcessedBlock = await this.transactionRepository.getLastProcessedBlock(this.origin);
+    const lastProcessedBlockFromDb = await this.transactionRepository.getLastProcessedBlock(this.origin);
+    const lastProcessedBlock = Math.max(lastProcessedBlockFromDb, this.startingBlock);
 
     const currentBlock = await this.originProvider.getBlockNumber();
     const safeBlock = currentBlock - this.originBlockConfirmations;
 
     logger.debug('Polling new bridge initiated events from DB', {
       origin: this.origin,
+      lastProcessedBlockFromDb,
+      startingBlock: this.startingBlock,
       lastProcessedBlock,
       currentBlock,
       safeBlock

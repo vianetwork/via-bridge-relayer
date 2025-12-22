@@ -19,6 +19,7 @@ export abstract class GlobalHandler implements Handler {
   protected readonly transactionBatchSize: number;
   protected readonly initiateWaitConfirmations: number;
   protected readonly startingBlock: number;
+  protected readonly destinationStartingBlock: number;
   protected readonly bridgeInitiatedEvent: string;
   protected readonly originBlockConfirmations: number;
   protected readonly destinationBlockConfirmations: number;
@@ -68,6 +69,10 @@ export abstract class GlobalHandler implements Handler {
       this.origin == BridgeOrigin.Ethereum
         ? appConfig.ethStartingBlock
         : appConfig.viaStartingBlock;
+    this.destinationStartingBlock =
+      this.origin == BridgeOrigin.Ethereum
+        ? appConfig.viaStartingBlock
+        : appConfig.ethStartingBlock;
   }
 
   abstract handle(): Promise<boolean>;
