@@ -3,7 +3,11 @@ import { TransactionRepository } from '../../database/transaction.repository';
 import { DepositExecutedRepository } from '../../database/depositExecuted.repository';
 import { L2MessageSentRepository } from '../../database/l2MessageSent.repository';
 import { VaultControllerTransactionRepository } from '../../database/vaultControllerTransaction.repository';
-import { IL1MessageSentRepository, IMessageWithdrawalExecutedRepository } from '../../database/interfaces';
+import {
+  IL1MessageSentRepository,
+  IMessageWithdrawalExecutedRepository,
+  IWithdrawalStateUpdatedRepository,
+} from '../../database/interfaces';
 import { ContractAddresses, BridgeOrigin } from '../../types/types';
 import { ethers, AbiCoder } from 'ethers';
 import * as viaEthers from 'via-ethers';
@@ -35,6 +39,7 @@ export abstract class GlobalHandler implements Handler {
     protected readonly l1MessageSentRepository: IL1MessageSentRepository,
     protected readonly l2MessageSentRepository: L2MessageSentRepository,
     protected readonly vaultControllerTransactionRepository: VaultControllerTransactionRepository,
+    protected readonly withdrawalStateUpdatedRepository: IWithdrawalStateUpdatedRepository,
     protected readonly contractAddresses: ContractAddresses,
     protected readonly origin: BridgeOrigin,
     protected readonly originProvider: ethers.Provider | viaEthers.Provider,

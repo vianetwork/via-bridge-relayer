@@ -2,7 +2,11 @@ import { TransactionRepository } from '../database/transaction.repository';
 import { DepositExecutedRepository } from '../database/depositExecuted.repository';
 import { L2MessageSentRepository } from '../database/l2MessageSent.repository';
 import { VaultControllerTransactionRepository } from '../database/vaultControllerTransaction.repository';
-import { IL1MessageSentRepository, IMessageWithdrawalExecutedRepository } from '../database/interfaces';
+import {
+  IL1MessageSentRepository,
+  IMessageWithdrawalExecutedRepository,
+  IWithdrawalStateUpdatedRepository,
+} from '../database/interfaces';
 import {
   ContractAddresses, BridgeOrigin,
 } from '../types/types';
@@ -29,6 +33,7 @@ export type TransactionProcessorArgs = {
   l1MessageSentRepository: IL1MessageSentRepository,
   l2MessageSentRepository: L2MessageSentRepository,
   vaultControllerTransactionRepository: VaultControllerTransactionRepository,
+  withdrawalStateUpdatedRepository: IWithdrawalStateUpdatedRepository,
   contractAddresses: ContractAddresses,
   origin: BridgeOrigin,
   originProvider: ethers.Provider,
@@ -42,6 +47,7 @@ export class TransactionProcessor {
   protected readonly l1MessageSentRepository: IL1MessageSentRepository;
   protected readonly l2MessageSentRepository: L2MessageSentRepository;
   protected readonly vaultControllerTransactionRepository: VaultControllerTransactionRepository;
+  protected readonly withdrawalStateUpdatedRepository: IWithdrawalStateUpdatedRepository;
   protected readonly contractAddresses: ContractAddresses;
   protected readonly origin: BridgeOrigin;
   protected readonly originProvider: ethers.Provider;
@@ -56,6 +62,7 @@ export class TransactionProcessor {
     this.l1MessageSentRepository = args.l1MessageSentRepository;
     this.l2MessageSentRepository = args.l2MessageSentRepository;
     this.vaultControllerTransactionRepository = args.vaultControllerTransactionRepository;
+    this.withdrawalStateUpdatedRepository = args.withdrawalStateUpdatedRepository;
     this.contractAddresses = args.contractAddresses;
     this.origin = args.origin;
     this.originProvider = args.originProvider;
@@ -71,6 +78,7 @@ export class TransactionProcessor {
       l1MessageSentRepository: this.l1MessageSentRepository,
       l2MessageSentRepository: this.l2MessageSentRepository,
       vaultControllerTransactionRepository: this.vaultControllerTransactionRepository,
+      withdrawalStateUpdatedRepository: this.withdrawalStateUpdatedRepository,
       contractAddresses: this.contractAddresses,
       origin: this.origin,
       originProvider: this.originProvider,
