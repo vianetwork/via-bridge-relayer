@@ -52,8 +52,16 @@ export class BridgeInitiatedHandler extends GlobalHandler {
           continue;
         }
 
-
         const payload = event.payload;
+
+        const alreadyRelayed = await this.isMessageAlreadyRelayed(payload);
+        if (alreadyRelayed) {
+          logger.debug('Message already relayed on destination chain, skipping:', {
+            transactionHash,
+            payloadHash: ethers.keccak256(payload)
+          });
+          continue;
+        }
 
         // Determine event type
         const eventType = this.origin === BridgeOrigin.Ethereum ? 'DepositMessageSent' : 'WithdrawalSent';
@@ -149,6 +157,22 @@ export class BridgeInitiatedHandler extends GlobalHandler {
       return await this.l1MessageSentRepository.getEventsSinceBlock(lastBlock, safeBlock, limit);
     } else {
       return await this.l2MessageSentRepository.getEventsSinceBlock(lastBlock, safeBlock, limit);
+    }
+  }
+
+  private async isMessageAlreadyRelayed(payload: string): Promise<boolean> {
+    const messageManagerContract = this.getDestinationMessageManagerContract();
+    const payloadHash = ethers.keccak256(payload);
+
+    try {
+      const [status] = await messageManagerContract.getMessageInfo(payloadHash);
+      return status;
+    } catch (error) {
+      logger.warn('Failed to check message relay status, proceeding with relay', {
+        payloadHash,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return false;
     }
   }
 }

@@ -12,6 +12,8 @@ import { Handler } from './interfaces/handler';
 import { L1NonceWallet, L2NonceWallet, NonceWalletManager } from '../nonceWallet';
 import { ETHEREUM_BRIDGE_ABI } from '../../contracts/EthereumBridge';
 import { VIA_BRIDGE_ABI } from '../../contracts/ViaBridge';
+import { L1_BRIDGE_MESSAGE_MANAGER } from '../../contracts/L1BridgeMessageManager';
+import { L2_BRIDGE_MESSAGE_MANAGER } from '../../contracts/L2BridgeMessageManager';
 
 export abstract class GlobalHandler implements Handler {
   private readonly nonceWalletManager: NonceWalletManager = NonceWalletManager.getInstance();
@@ -128,6 +130,25 @@ export abstract class GlobalHandler implements Handler {
       return new viaEthers.Contract(address, abi, this.getL2Wallet());
     } else {
       return new ethers.Contract(address, abi, this.getL1Wallet());
+    }
+  }
+
+  protected getDestinationMessageManagerContract(): ethers.Contract | viaEthers.Contract {
+    // If origin is Ethereum, destination is L2 (Via)
+    // If origin is Via, destination is L1 (Ethereum)
+    const address =
+      this.origin === BridgeOrigin.Ethereum
+        ? this.contractAddresses.l2BridgeMessageManager
+        : this.contractAddresses.l1BridgeMessageManager;
+    const abi =
+      this.origin === BridgeOrigin.Ethereum
+        ? L2_BRIDGE_MESSAGE_MANAGER
+        : L1_BRIDGE_MESSAGE_MANAGER;
+
+    if (this.origin === BridgeOrigin.Ethereum) {
+      return new viaEthers.Contract(address, abi, this.l2Provider);
+    } else {
+      return new ethers.Contract(address, abi, this.l1Provider);
     }
   }
 

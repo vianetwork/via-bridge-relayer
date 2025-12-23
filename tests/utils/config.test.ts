@@ -19,6 +19,8 @@ describe('AppConfig', () => {
     // Set minimal valid env to prevent module-level instantiation crash
     process.env.ETHEREUM_BRIDGE_ADDRESS = '0x1234567890123456789012345678901234567890';
     process.env.VIA_BRIDGE_ADDRESS = '0x1234567890123456789012345678901234567891';
+    process.env.L1_BRIDGE_MESSAGE_MANAGER_ADDRESS = '0x1234567890123456789012345678901234567892';
+    process.env.L2_BRIDGE_MESSAGE_MANAGER_ADDRESS = '0x1234567890123456789012345678901234567893';
     process.env.RELAYER_PRIVATE_KEY = '0x0123456789012345678901234567890123456789012345678901234567890123';
 
     // Require the module
@@ -37,6 +39,8 @@ describe('AppConfig', () => {
     process.env.RELAYER_PRIVATE_KEY = '0x' + '1'.repeat(64);
     process.env.ETHEREUM_BRIDGE_ADDRESS = '0x' + '2'.repeat(40);
     process.env.VIA_BRIDGE_ADDRESS = '0x' + '3'.repeat(40);
+    process.env.L1_BRIDGE_MESSAGE_MANAGER_ADDRESS = '0x' + '4'.repeat(40);
+    process.env.L2_BRIDGE_MESSAGE_MANAGER_ADDRESS = '0x' + '5'.repeat(40);
     process.env.NODE_ENV = 'test';
     // Clear URL env vars to ensure defaults are used
     delete process.env.ETH_URL;
@@ -55,6 +59,8 @@ describe('AppConfig', () => {
     process.env.RELAYER_PRIVATE_KEY = '0x' + 'a'.repeat(64);
     process.env.ETHEREUM_BRIDGE_ADDRESS = '0x' + 'b'.repeat(40);
     process.env.VIA_BRIDGE_ADDRESS = '0x' + 'c'.repeat(40);
+    process.env.L1_BRIDGE_MESSAGE_MANAGER_ADDRESS = '0x' + 'd'.repeat(40);
+    process.env.L2_BRIDGE_MESSAGE_MANAGER_ADDRESS = '0x' + 'e'.repeat(40);
     process.env.NODE_ENV = 'test';
 
     const config = new AppConfig();
@@ -67,6 +73,8 @@ describe('AppConfig', () => {
   test('should throw error if required valid private key missing', () => {
     process.env.ETHEREUM_BRIDGE_ADDRESS = '0x' + '2'.repeat(40);
     process.env.VIA_BRIDGE_ADDRESS = '0x' + '3'.repeat(40);
+    process.env.L1_BRIDGE_MESSAGE_MANAGER_ADDRESS = '0x' + '4'.repeat(40);
+    process.env.L2_BRIDGE_MESSAGE_MANAGER_ADDRESS = '0x' + '5'.repeat(40);
     process.env.NODE_ENV = 'test';
     delete process.env.RELAYER_PRIVATE_KEY; // Ensure it's deleted
 
@@ -77,6 +85,8 @@ describe('AppConfig', () => {
     process.env.RELAYER_PRIVATE_KEY = 'invalid';
     process.env.ETHEREUM_BRIDGE_ADDRESS = '0x' + '2'.repeat(40);
     process.env.VIA_BRIDGE_ADDRESS = '0x' + '3'.repeat(40);
+    process.env.L1_BRIDGE_MESSAGE_MANAGER_ADDRESS = '0x' + '4'.repeat(40);
+    process.env.L2_BRIDGE_MESSAGE_MANAGER_ADDRESS = '0x' + '5'.repeat(40);
     process.env.NODE_ENV = 'test';
 
     expect(() => new AppConfig()).toThrow(/RELAYER_PRIVATE_KEY/);
@@ -86,6 +96,8 @@ describe('AppConfig', () => {
     process.env.RELAYER_PRIVATE_KEY = '0x' + '1'.repeat(64);
     process.env.ETHEREUM_BRIDGE_ADDRESS = '0x' + '2'.repeat(40);
     process.env.VIA_BRIDGE_ADDRESS = '0x' + '3'.repeat(40);
+    process.env.L1_BRIDGE_MESSAGE_MANAGER_ADDRESS = '0x' + '4'.repeat(40);
+    process.env.L2_BRIDGE_MESSAGE_MANAGER_ADDRESS = '0x' + '5'.repeat(40);
     process.env.NODE_ENV = 'test';
     process.env.ETH_FALLBACK_URLS = 'http://fb1.com,http://fb2.com, ';
 

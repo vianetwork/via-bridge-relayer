@@ -20,6 +20,8 @@ export interface NetworkInfo {
 export interface ContractAddresses {
   ethereumBridge: string;
   viaBridge: string;
+  l1BridgeMessageManager: string;
+  l2BridgeMessageManager: string;
 }
 
 export interface BridgeInitiatedArguments {
