@@ -7,6 +7,7 @@ import {
 import { BridgeOrigin } from '../../../types/types';
 import logger from '../../../utils/logger';
 import { appConfig } from '../../../utils/config';
+import * as viaEthers from 'via-ethers';
 
 /**
  * Handler responsible for checking stale pending transactions and updating their status
@@ -85,6 +86,11 @@ export class StalePendingTransactionHandler extends GlobalHandler {
 
   /**
    * Check transaction receipt and update status accordingly
+   *
+   * For Via chain destination (origin is Ethereum):
+   *   - Receipt status must be 1 AND transaction should have l1BatchNumber
+   * For Ethereum destination (origin is Via):
+   *   - Receipt status must be 1 AND need to wait for block confirmations
    */
   private async checkAndUpdateTransaction(transaction: Transaction): Promise<boolean> {
     const txHash = transaction.finalizedTransactionHash;
@@ -117,22 +123,6 @@ export class StalePendingTransactionHandler extends GlobalHandler {
       return true;
     }
 
-    if (receipt.status === 1) {
-      // Transaction succeeded - mark as Finalized
-      logger.info('Stale transaction confirmed successful - marking as Finalized', {
-        transactionId: transaction.id,
-        txHash,
-        blockNumber: receipt.blockNumber,
-      });
-
-      await this.transactionRepository.updateStatus(
-        transaction.id as number,
-        TransactionStatus.Finalized,
-        Number(receipt.blockNumber)
-      );
-      return true;
-    }
-
     if (receipt.status === 0) {
       // Transaction failed on chain - mark as Failed
       logger.warn('Stale transaction failed on chain - marking as Failed', {
@@ -146,6 +136,74 @@ export class StalePendingTransactionHandler extends GlobalHandler {
         TransactionStatus.Failed
       );
       return true;
+    }
+
+    if (receipt.status === 1) {
+      // Transaction succeeded on chain - but need additional checks based on destination
+
+      if (this.origin === BridgeOrigin.Ethereum) {
+        // Destination is Via (L2) - need to check for l1BatchNumber
+        const viaReceipt = receipt as viaEthers.types.TransactionReceipt;
+
+        if (!viaReceipt.l1BatchNumber) {
+          // l1BatchNumber not yet available - transaction not fully confirmed
+          logger.debug('Stale transaction receipt missing l1BatchNumber - waiting for batch inclusion', {
+            transactionId: transaction.id,
+            txHash,
+            blockNumber: receipt.blockNumber,
+          });
+          return false;
+        }
+
+        // Transaction has l1BatchNumber - mark as Finalized
+        logger.info('Stale transaction confirmed with l1BatchNumber - marking as Finalized', {
+          transactionId: transaction.id,
+          txHash,
+          blockNumber: receipt.blockNumber,
+          l1BatchNumber: viaReceipt.l1BatchNumber,
+        });
+
+        await this.transactionRepository.updateStatus(
+          transaction.id as number,
+          TransactionStatus.Finalized,
+          Number(receipt.blockNumber)
+        );
+        return true;
+      } else {
+        // Destination is Ethereum (L1) - need to check block confirmations
+        const currentBlockNumber = await this.l1Provider.getBlockNumber();
+        const confirmations = currentBlockNumber - Number(receipt.blockNumber);
+        const requiredConfirmations = appConfig.ethWaitBlockConfirmations;
+
+        if (confirmations < requiredConfirmations) {
+          // Not enough confirmations yet
+          logger.debug('Stale transaction waiting for block confirmations', {
+            transactionId: transaction.id,
+            txHash,
+            blockNumber: receipt.blockNumber,
+            currentBlockNumber,
+            confirmations,
+            requiredConfirmations,
+          });
+          return false;
+        }
+
+        // Enough confirmations - mark as Finalized
+        logger.info('Stale transaction confirmed with sufficient block confirmations - marking as Finalized', {
+          transactionId: transaction.id,
+          txHash,
+          blockNumber: receipt.blockNumber,
+          confirmations,
+          requiredConfirmations,
+        });
+
+        await this.transactionRepository.updateStatus(
+          transaction.id as number,
+          TransactionStatus.Finalized,
+          Number(receipt.blockNumber)
+        );
+        return true;
+      }
     }
 
     return false;
@@ -193,6 +251,9 @@ export class StalePendingTransactionHandler extends GlobalHandler {
 
   /**
    * Check VaultControllerTransaction receipt and update status accordingly
+   *
+   * VaultController transactions are always on L1 (Ethereum), so they need
+   * to wait for block confirmations before being considered confirmed.
    */
   private async checkAndUpdateVaultControllerTransaction(
     vct: VaultControllerTransaction
@@ -225,25 +286,6 @@ export class StalePendingTransactionHandler extends GlobalHandler {
       return true;
     }
 
-    if (receipt.status === 1) {
-      // Transaction succeeded - mark as Confirmed
-      // Note: The WithdrawalStateUpdatedHandler will later move it to ReadyToClaim
-      logger.info(
-        'Stale VaultControllerTransaction confirmed successful - marking as Confirmed',
-        {
-          vctId: vct.id,
-          txHash,
-          blockNumber: receipt.blockNumber,
-        }
-      );
-
-      await this.vaultControllerTransactionRepository.updateStatus(
-        vct.id as number,
-        VaultControllerTransactionStatus.Confirmed
-      );
-      return true;
-    }
-
     if (receipt.status === 0) {
       // Transaction failed on chain - mark as Failed
       logger.warn('Stale VaultControllerTransaction failed on chain - marking as Failed', {
@@ -255,6 +297,45 @@ export class StalePendingTransactionHandler extends GlobalHandler {
       await this.vaultControllerTransactionRepository.updateStatus(
         vct.id as number,
         VaultControllerTransactionStatus.Failed
+      );
+      return true;
+    }
+
+    if (receipt.status === 1) {
+      // Transaction succeeded on chain - check block confirmations
+      const currentBlockNumber = await this.l1Provider.getBlockNumber();
+      const confirmations = currentBlockNumber - Number(receipt.blockNumber);
+      const requiredConfirmations = appConfig.ethWaitBlockConfirmations;
+
+      if (confirmations < requiredConfirmations) {
+        // Not enough confirmations yet
+        logger.debug('Stale VaultControllerTransaction waiting for block confirmations', {
+          vctId: vct.id,
+          txHash,
+          blockNumber: receipt.blockNumber,
+          currentBlockNumber,
+          confirmations,
+          requiredConfirmations,
+        });
+        return false;
+      }
+
+      // Enough confirmations - mark as Confirmed
+      // Note: The WithdrawalStateUpdatedHandler will later move it to ReadyToClaim
+      logger.info(
+        'Stale VaultControllerTransaction confirmed with sufficient block confirmations - marking as Confirmed',
+        {
+          vctId: vct.id,
+          txHash,
+          blockNumber: receipt.blockNumber,
+          confirmations,
+          requiredConfirmations,
+        }
+      );
+
+      await this.vaultControllerTransactionRepository.updateStatus(
+        vct.id as number,
+        VaultControllerTransactionStatus.Confirmed
       );
       return true;
     }
