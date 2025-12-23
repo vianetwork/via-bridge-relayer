@@ -64,7 +64,9 @@ describe('TransactionService', () => {
     mockContractAddresses = {
       ethereumBridge: '0x1234567890123456789012345678901234567890',
       viaBridge: '0x1234567890123456789012345678901234567891',
-    } as any;
+      l1BridgeMessageManager: '0x1234567890123456789012345678901234567892',
+      l2BridgeMessageManager: '0x1234567890123456789012345678901234567893',
+    };
 
     // Mock repositories
     mockTransactionRepository = {

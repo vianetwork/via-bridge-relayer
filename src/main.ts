@@ -154,6 +154,8 @@ async function main() {
       const contractAddresses: ContractAddresses = {
         ethereumBridge: appConfig.ethereumBridgeAddress,
         viaBridge: appConfig.viaBridgeAddress,
+        l1BridgeMessageManager: appConfig.l1BridgeMessageManagerAddress,
+        l2BridgeMessageManager: appConfig.l2BridgeMessageManagerAddress,
       };
 
       // Verify all repositories are initialized
