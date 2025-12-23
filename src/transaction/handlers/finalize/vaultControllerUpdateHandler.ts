@@ -145,7 +145,52 @@ export class VaultControllerUpdateHandler extends GlobalHandler {
           }))
         });
 
-        const { messageHashes, totalShares } = this.computeBatchData(withdrawalEvents);
+        // Filter out withdrawals that have already been processed on L1
+        const { pendingEvents, alreadyProcessedEvents } = await this.filterAlreadyProcessedWithdrawals(
+          withdrawalEvents,
+          l1VaultAddress
+        );
+
+        // Update status for transactions whose withdrawals are already processed
+        if (alreadyProcessedEvents.length > 0) {
+          const alreadyProcessedTxHashes = new Set(
+            alreadyProcessedEvents.map(e => e.transactionHash.toLowerCase())
+          );
+          const alreadyProcessedTxs = transactions.filter(tx =>
+            alreadyProcessedTxHashes.has(tx.finalizedTransactionHash.toLowerCase())
+          );
+          const alreadyProcessedIds = alreadyProcessedTxs.map(tx => tx.id as number);
+
+          await this.transactionRepository.updateStatusBatch(
+            alreadyProcessedIds,
+            TransactionStatus.VaultUpdated
+          );
+
+          logger.info('Updated already-processed transactions to VaultUpdated', {
+            count: alreadyProcessedIds.length,
+            transactionIds: alreadyProcessedIds
+          });
+        }
+
+        // Skip batch if no pending events remain
+        if (pendingEvents.length === 0) {
+          logger.info('All withdrawals in batch already processed, skipping', {
+            groupKey,
+            l1BatchNumber
+          });
+          hasProcessedItems = true;
+          continue;
+        }
+
+        // Filter transactions to only include those with pending events
+        const pendingTxHashes = new Set(
+          pendingEvents.map(e => e.transactionHash.toLowerCase())
+        );
+        const pendingTransactions = transactions.filter(tx =>
+          pendingTxHashes.has(tx.finalizedTransactionHash.toLowerCase())
+        );
+
+        const { messageHashes, totalShares } = this.computeBatchData(pendingEvents);
 
         logger.info('Calling updateWithdrawalState on VaultController', {
           l1BatchNumber,
@@ -176,17 +221,17 @@ export class VaultControllerUpdateHandler extends GlobalHandler {
           status: 'Pending'
         });
 
-        const transactionIds = transactions.map(tx => tx.id as number);
+        const pendingTransactionIds = pendingTransactions.map(tx => tx.id as number);
         await this.transactionRepository.linkToVaultControllerTransaction(
-          transactionIds,
+          pendingTransactionIds,
           vaultControllerTx.id as number
         );
 
-        await this.transactionRepository.updateStatusBatch(transactionIds, TransactionStatus.VaultUpdated);
+        await this.transactionRepository.updateStatusBatch(pendingTransactionIds, TransactionStatus.VaultUpdated);
 
         logger.info('Successfully updated VaultController for batch', {
           l1BatchNumber,
-          transactionCount: transactions.length,
+          transactionCount: pendingTransactions.length,
           messageHashCount: messageHashes.length,
           vaultControllerTransactionId: vaultControllerTx.id
         });
@@ -221,6 +266,53 @@ export class VaultControllerUpdateHandler extends GlobalHandler {
     }
 
     return { messageHashes, totalShares };
+  }
+
+  /**
+   * Filters out withdrawal events that have already been processed on L1.
+   * Checks each event's messageHash against the vaultController.withdrawalInfo to see
+   * if it has already been included in a previous updateWithdrawalState call.
+   */
+  private async filterAlreadyProcessedWithdrawals(
+    events: MessageWithdrawalExecuted[],
+    l1VaultAddress: string
+  ): Promise<{
+    pendingEvents: MessageWithdrawalExecuted[];
+    alreadyProcessedEvents: MessageWithdrawalExecuted[];
+  }> {
+    const vaultController = new ethers.Contract(
+      l1VaultAddress,
+      VAULT_CONTROLLER_ABI,
+      this.getL1Wallet()
+    );
+
+    const pendingEvents: MessageWithdrawalExecuted[] = [];
+    const alreadyProcessedEvents: MessageWithdrawalExecuted[] = [];
+
+    for (const event of events) {
+      const payload = ethers.AbiCoder.defaultAbiCoder().encode(
+        ["uint256", "uint8", "address", "address", "uint256"],
+        [event.vaultNonce, 2, event.l1Vault, event.receiver, event.shares]
+      );
+      const messageHash = ethers.keccak256(payload);
+
+      const info = await vaultController.withdrawalInfo(messageHash);
+      const wasIncludedInUpdate = info.batchNumber > 0n;
+
+      if (wasIncludedInUpdate) {
+        logger.info('Withdrawal already processed on L1, skipping', {
+          messageHash,
+          existingBatchNumber: info.batchNumber.toString(),
+          vaultNonce: event.vaultNonce,
+          transactionHash: event.transactionHash
+        });
+        alreadyProcessedEvents.push(event);
+      } else {
+        pendingEvents.push(event);
+      }
+    }
+
+    return { pendingEvents, alreadyProcessedEvents };
   }
 
   /**
