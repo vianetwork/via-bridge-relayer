@@ -50,7 +50,7 @@ export class WithdrawalStateUpdatedHandler extends GlobalHandler {
     });
 
     // Query the subgraph for WithdrawalStateUpdated events
-    const withdrawalStateUpdatedEvents = await this.vaultControllerTransactionRepository.getWithdrawalStateUpdatedEvents(
+    const withdrawalStateUpdatedEvents = await this.withdrawalStateUpdatedRepository.getWithdrawalStateUpdatedEvents(
       l1BatchNumbers,
       safeBlockNumber,
       this.transactionBatchSize

@@ -5,6 +5,7 @@ import {
 import { RelayerBaseRepository } from './base.repository';
 import { graphDataSource } from './typeorm.config';
 import { appConfig } from '../utils/config';
+import { IWithdrawalStateUpdatedRepository } from './interfaces';
 
 export interface WithdrawalStateUpdatedEvent {
   id: string;
@@ -16,7 +17,7 @@ export interface WithdrawalStateUpdatedEvent {
   transactionHash: string;
 }
 
-export class VaultControllerTransactionRepository extends RelayerBaseRepository<VaultControllerTransaction> {
+export class VaultControllerTransactionRepository extends RelayerBaseRepository<VaultControllerTransaction> implements IWithdrawalStateUpdatedRepository {
   constructor() {
     super(VaultControllerTransaction);
   }

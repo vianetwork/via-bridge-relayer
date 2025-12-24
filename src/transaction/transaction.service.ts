@@ -9,7 +9,7 @@ import { TransactionRepository } from '../database/transaction.repository';
 import { DepositExecutedRepository } from '../database/depositExecuted.repository';
 import { L2MessageSentRepository } from '../database/l2MessageSent.repository';
 import { VaultControllerTransactionRepository } from '../database/vaultControllerTransaction.repository';
-import { IL1MessageSentRepository, IMessageWithdrawalExecutedRepository } from '../database/interfaces';
+import { IL1MessageSentRepository, IMessageWithdrawalExecutedRepository, IWithdrawalStateUpdatedRepository } from '../database/interfaces';
 import { ContractAddresses, BridgeOrigin } from '../types/types';
 
 export class TransactionService {
@@ -26,6 +26,7 @@ export class TransactionService {
     private readonly l1MessageSentRepository: IL1MessageSentRepository,
     private readonly l2MessageSentRepository: L2MessageSentRepository,
     private readonly vaultControllerTransactionRepository: VaultControllerTransactionRepository,
+    private readonly withdrawalStateUpdatedRepository: IWithdrawalStateUpdatedRepository,
     private readonly pollingInterval: number
   ) {
     this.transactionWorkersEth = [
@@ -44,6 +45,7 @@ export class TransactionService {
               l1MessageSentRepository: this.l1MessageSentRepository,
               l2MessageSentRepository: this.l2MessageSentRepository,
               vaultControllerTransactionRepository: this.vaultControllerTransactionRepository,
+              withdrawalStateUpdatedRepository: this.withdrawalStateUpdatedRepository,
               contractAddresses: this.contractAddresses,
               origin: BridgeOrigin.Ethereum,
               originProvider: this.providerEth,
@@ -72,6 +74,7 @@ export class TransactionService {
               l1MessageSentRepository: this.l1MessageSentRepository,
               l2MessageSentRepository: this.l2MessageSentRepository,
               vaultControllerTransactionRepository: this.vaultControllerTransactionRepository,
+              withdrawalStateUpdatedRepository: this.withdrawalStateUpdatedRepository,
               contractAddresses: this.contractAddresses,
               origin: BridgeOrigin.Via,
               originProvider: this.providerVia,
