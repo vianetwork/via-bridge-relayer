@@ -8,3 +8,5 @@ export {
   IMessageWithdrawalExecutedRepository,
   IDepositExecutedRepository,
 } from './executedEventRepository.interface';
+
+export { IWithdrawalStateUpdatedRepository } from './withdrawalStateUpdatedRepository.interface';

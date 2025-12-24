@@ -95,3 +95,22 @@ export const WITHDRAWAL_STATE_UPDATED_QUERY = `
     }
   }
 `;
+
+export const WITHDRAWAL_STATE_UPDATED_BY_L1_BATCH_QUERY = `
+  query WithdrawalStateUpdatedsByL1Batch($l1Batches: [BigInt!]!, $maxBlock: BigInt!, $limit: Int!) {
+    withdrawalStateUpdateds(
+      where: { l1Batch_in: $l1Batches, blockNumber_lte: $maxBlock }
+      orderBy: blockNumber
+      orderDirection: asc
+      first: $limit
+    ) {
+      id
+      l1Batch
+      exchangeRate
+      messageCount
+      blockNumber
+      blockTimestamp
+      transactionHash
+    }
+  }
+`;

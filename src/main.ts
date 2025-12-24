@@ -16,8 +16,8 @@ import { relayerDataSource, graphDataSource } from './database/typeorm.config';
 import { ProviderFactory } from './utils/providerFactory';
 import { FailoverProvider } from './utils/failoverProvider';
 import { appConfig } from './utils/config';
-import { IL1MessageSentRepository, IMessageWithdrawalExecutedRepository } from './database/interfaces';
-import { GraphQLClient, L1MessageSentGraphQLRepository, MessageWithdrawalExecutedGraphQLRepository } from './graphql';
+import { IL1MessageSentRepository, IMessageWithdrawalExecutedRepository, IWithdrawalStateUpdatedRepository } from './database/interfaces';
+import { GraphQLClient, L1MessageSentGraphQLRepository, MessageWithdrawalExecutedGraphQLRepository, WithdrawalStateUpdatedGraphQLRepository } from './graphql';
 
 async function main() {
   log.info('🚀 Blockchain Bridge Monitor - Bridge Events (with Failover Providers)');
@@ -33,6 +33,7 @@ async function main() {
   let l1MessageSentRepository: IL1MessageSentRepository | null = null;
   let l2MessageSentRepository: L2MessageSentRepository | null = null;
   let vaultControllerTransactionRepository: VaultControllerTransactionRepository | null = null;
+  let withdrawalStateUpdatedRepository: IWithdrawalStateUpdatedRepository | null = null;
   let ethProvider: ethers.Provider | null = null;
   let viaProvider: viaEthers.Provider | null = null;
   let graphqlClient: GraphQLClient | null = null;
@@ -104,10 +105,12 @@ async function main() {
       // Create GraphQL-based repositories for L1
       l1MessageSentRepository = new L1MessageSentGraphQLRepository(graphqlClient);
       messageWithdrawalExecutedRepository = new MessageWithdrawalExecutedGraphQLRepository(graphqlClient);
+      withdrawalStateUpdatedRepository = new WithdrawalStateUpdatedGraphQLRepository(graphqlClient);
 
       // Connect GraphQL repositories (lightweight, just marks as connected)
       await l1MessageSentRepository.connect();
       await messageWithdrawalExecutedRepository.connect();
+      await withdrawalStateUpdatedRepository.connect();
       log.info('✅ GraphQL repositories for L1 initialized');
     }
 
@@ -134,6 +137,7 @@ async function main() {
     if (!appConfig.useTheGraphForL1) {
       l1MessageSentRepository = new L1MessageSentRepository();
       messageWithdrawalExecutedRepository = new MessageWithdrawalExecutedRepository();
+      withdrawalStateUpdatedRepository = vaultControllerTransactionRepository;
     }
 
     // Connect all repositories (they will use their respective pre-initialized DataSources)
@@ -160,7 +164,8 @@ async function main() {
 
       // Verify all repositories are initialized
       if (!transactionRepository || !depositExecutedRepository || !messageWithdrawalExecutedRepository ||
-          !l1MessageSentRepository || !l2MessageSentRepository || !vaultControllerTransactionRepository) {
+          !l1MessageSentRepository || !l2MessageSentRepository || !vaultControllerTransactionRepository ||
+          !withdrawalStateUpdatedRepository) {
         throw new Error('Failed to initialize all required repositories');
       }
 
@@ -174,6 +179,7 @@ async function main() {
         l1MessageSentRepository,
         l2MessageSentRepository,
         vaultControllerTransactionRepository,
+        withdrawalStateUpdatedRepository,
         Number(appConfig.workerPollingInterval)
       );
 
