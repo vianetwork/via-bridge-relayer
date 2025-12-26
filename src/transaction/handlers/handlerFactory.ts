@@ -2,13 +2,14 @@ import { TransactionProcessorArgs, TransactionProcessorStatus } from '../transac
 import { BridgeInitiatedHandler } from './initiate/bridgeInitiatedHandler';
 import { BridgeFinalizeHandler } from './finalize/bridgeFinalizeHandler';
 import { L1BatchNumberHandler } from './finalize/l1BatchNumberHandler';
+import { L1BatchFinalizedHandler } from './finalize/l1BatchFinalizedHandler';
 import { VaultControllerUpdateHandler } from './finalize/vaultControllerUpdateHandler';
 import { WithdrawalStateUpdatedHandler } from './finalize/withdrawalStateUpdatedHandler';
 import { StalePendingTransactionHandler } from './stale/stalePendingTransactionHandler';
 
 
 export class HandlerFactory {
-  static createHandler(args: TransactionProcessorArgs): BridgeInitiatedHandler | BridgeFinalizeHandler | L1BatchNumberHandler | VaultControllerUpdateHandler | WithdrawalStateUpdatedHandler | StalePendingTransactionHandler {
+  static createHandler(args: TransactionProcessorArgs): BridgeInitiatedHandler | BridgeFinalizeHandler | L1BatchNumberHandler | L1BatchFinalizedHandler | VaultControllerUpdateHandler | WithdrawalStateUpdatedHandler | StalePendingTransactionHandler {
     switch (args.status) {
       case TransactionProcessorStatus.New:
         return new BridgeInitiatedHandler(
@@ -40,6 +41,20 @@ export class HandlerFactory {
         );
       case TransactionProcessorStatus.FetchL1BatchNumber:
         return new L1BatchNumberHandler(
+          args.transactionRepository,
+          args.depositExecutedRepository,
+          args.messageWithdrawalExecutedRepository,
+          args.l1MessageSentRepository,
+          args.l2MessageSentRepository,
+          args.vaultControllerTransactionRepository,
+          args.withdrawalStateUpdatedRepository,
+          args.contractAddresses,
+          args.origin,
+          args.originProvider,
+          args.destinationProvider
+        );
+      case TransactionProcessorStatus.CheckL1BatchFinalized:
+        return new L1BatchFinalizedHandler(
           args.transactionRepository,
           args.depositExecutedRepository,
           args.messageWithdrawalExecutedRepository,

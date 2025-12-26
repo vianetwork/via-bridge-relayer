@@ -222,6 +222,26 @@ export class TransactionRepository extends RelayerBaseRepository<Transaction> {
     const repository = this.getRepository();
     const queryBuilder = repository
       .createQueryBuilder('transaction')
+      .where('transaction.status = :status', { status: TransactionStatus.L1BatchFinalized })
+      .andWhere('transaction.origin = :origin', { origin })
+      .andWhere('transaction.l1BatchNumber IS NOT NULL')
+      .orderBy('transaction.l1BatchNumber', 'ASC')
+      .addOrderBy('transaction.createdAt', 'ASC');
+
+    if (limit) {
+      queryBuilder.limit(limit);
+    }
+
+    return await queryBuilder.getMany();
+  }
+
+  async getFinalizedTransactionsForL1BatchCheck(
+    origin: BridgeOrigin,
+    limit?: number
+  ): Promise<Transaction[]> {
+    const repository = this.getRepository();
+    const queryBuilder = repository
+      .createQueryBuilder('transaction')
       .where('transaction.status = :status', { status: TransactionStatus.Finalized })
       .andWhere('transaction.origin = :origin', { origin })
       .andWhere('transaction.l1BatchNumber IS NOT NULL')
@@ -233,6 +253,22 @@ export class TransactionRepository extends RelayerBaseRepository<Transaction> {
     }
 
     return await queryBuilder.getMany();
+  }
+
+  async updateStatusByL1BatchNumber(
+    l1BatchNumber: number,
+    origin: BridgeOrigin,
+    status: TransactionStatus
+  ): Promise<void> {
+    const repository = this.getRepository();
+    await repository
+      .createQueryBuilder()
+      .update(Transaction)
+      .set({ status })
+      .where('l1BatchNumber = :l1BatchNumber', { l1BatchNumber })
+      .andWhere('origin = :origin', { origin })
+      .andWhere('status = :currentStatus', { currentStatus: TransactionStatus.Finalized })
+      .execute();
   }
 
   async updateStatusBatch(

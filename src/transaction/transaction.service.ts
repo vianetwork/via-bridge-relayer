@@ -59,6 +59,7 @@ export class TransactionService {
       TransactionProcessorStatus.New,
       TransactionProcessorStatus.Pending,
       TransactionProcessorStatus.FetchL1BatchNumber,
+      TransactionProcessorStatus.CheckL1BatchFinalized,
       TransactionProcessorStatus.UpdateVaultController,
       TransactionProcessorStatus.CheckWithdrawalStateUpdated,
       TransactionProcessorStatus.CheckStalePending,
