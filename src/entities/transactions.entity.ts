@@ -19,7 +19,8 @@ export enum TransactionStatus {
   Finalized = 2,
   Failed = 3,
   Refunded = 4,
-  VaultUpdated = 5,
+  L1BatchFinalized = 5,
+  VaultUpdated = 6,
 }
 
 @Entity({ name: 'transactions' })
